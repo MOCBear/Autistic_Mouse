@@ -1,0 +1,13 @@
+# 鼠标控制和监听
+pynput>=1.7.6
+
+# Windows API 接口
+pywin32>=305
+
+# 数据处理和可视化
+numpy>=1.21.0
+matplotlib>=3.4.0
+
+# 其他依赖
+python-dateutil>=2.8.2
+six>=1.16.0 
