@@ -18,6 +18,7 @@ import threading
 import win32gui
 import win32con
 from mouse_controller import mouse_controller
+from mouse_mirror import mouse_mirror
 
 class FloatingWindow:
     """
@@ -82,6 +83,9 @@ class MouseRecorder:
         self.recording = True  # 记录状态标志
         
         self.floating_window = None  # 悬浮窗实例
+        
+        # 启动镜像记录
+        mouse_mirror.start_mirror()
     
     def _setup_logging(self):
         """设置日志"""
@@ -119,7 +123,7 @@ class MouseRecorder:
         # 在新线程中创建浮窗
         threading.Thread(target=create_window, daemon=True).start()
 
-    def add_point(self, x, y, event_type='move'):
+    def add_point(self, x, y, event_type='move', **kwargs):
         """添加轨迹点和事件"""
         try:
             timestamp = time.time()
@@ -128,8 +132,13 @@ class MouseRecorder:
             self.events.append({
                 'type': event_type,
                 'position': (x, y),
-                'timestamp': timestamp
+                'timestamp': timestamp,
+                'params': kwargs
             })
+            
+            # 添加到镜像记录
+            mouse_mirror.add_event(event_type, x, y, **kwargs)
+            
         except Exception as e:
             logging.error(f"添加轨迹点时发生错误: {str(e)}")
     
@@ -164,7 +173,11 @@ class MouseRecorder:
             mouse_controller.disable()
             from session_manager import logout_windows
             logout_windows()
-                
+            
+            # 保存镜像数据
+            if self.username:
+                mouse_mirror.save_mirror(self.username)
+            
             return data_file
             
         except Exception as e:

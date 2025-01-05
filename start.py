@@ -13,6 +13,8 @@ import winerror
 import logging
 from datetime import datetime
 import ctypes
+from notice import find_easyfas_shell
+from typing import Optional
 
 # 定义互斥体名称（使用唯一的名称）
 MUTEX_NAME = "Global\\MouseRecorderSingleInstance"
@@ -144,18 +146,28 @@ def ensure_admin_privileges():
         print("错误：无法获取管理员权限，程序将退出")
         return False
 
-def start_application():
-    """启动主应用程序"""
+def start_application() -> bool:
+    """
+    启动应用程序
+    按顺序执行：1. 智造协同平台 2. 主程序
+    """
     try:
-        # 导入主程序模块
+        # 第一步：启动智造协同平台
+        logging.info("第一步：正在启动智造协同平台...")
+        if not find_easyfas_shell():
+            logging.error("智造协同平台启动失败，程序终止")
+            return False
+        
+        # 第二步：启动主程序
+        logging.info("第二步：正在启动主程序...")
         from main import main
-        logging.info("正在启动主程序...")
         main()
+        return True
         
     except Exception as e:
-        logging.error(f"启动主程序时发生错误: {str(e)}")
+        logging.error(f"启动程序时发生错误: {str(e)}")
         print(f"启动失败: {str(e)}")
-        sys.exit(1)
+        return False
 
 def main():
     """主函数"""
@@ -179,8 +191,10 @@ def main():
             logging.info("等待权限提升或程序退出...")
             sys.exit(0)
         
-        # 启动主程序
-        start_application()
+        # 启动应用程序（按顺序执行）
+        if not start_application():
+            logging.error("程序启动失败")
+            sys.exit(1)
         
     except Exception as e:
         logging.error(f"程序运行时发生错误: {str(e)}")
